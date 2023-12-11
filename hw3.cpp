@@ -1,4 +1,26 @@
-#include<iostream>
+//add try catch
+
+#include <iostream>
+
+struct DayExceptionError
+{
+	int day;
+
+};
+
+struct MonthExceptionError
+{
+	int month;
+
+};
+
+struct YearExceptionError
+{
+	int year;
+
+};
+
+
 
 class Date
 {
@@ -6,26 +28,15 @@ private:
 	int day;
 	int month;
 	int year;
-	void Normalize()
+
+public:
+
+	Date(int d, int m, int y)
 	{
-		//create an array of maximum days in each month
+		day = d;
+		month = m;
+		year = y;
 		int MaxDay[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-
-
-		//month check
-		if (month > 12)
-		{
-			year += (month - 1) / 12;
-			month = (month - 1) % 12 + 1;
-		}
-		else if (month < 1)
-		{
-			int yearsToSubtract = (-month + 11) / 12;
-			year -= yearsToSubtract;
-			month = 12 - (-month + 11) % 12;
-		}
-
-		//leap year check
 		if (month == 2 && ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)))
 		{
 			MaxDay[1] = 29;
@@ -35,42 +46,38 @@ private:
 			MaxDay[1] = 28;
 		}
 
-		//proccess the date if the day is greater than the maximum day of the current month
 
-		while (day > MaxDay[month - 1])
+		if (y < 0)
 		{
-			day -= MaxDay[month - 1];
-			month++;
-			if (month > 12)
-			{
-				month = 1;
-				year++;
-			}
+			throw YearExceptionError(y);
 		}
 
-		//process the date in case of inserting a day less than or equal to 0
-		while (day <= 0)
+		if (m < 1 || m > 12)
 		{
-			month--;
-			if (month < 1)
-			{
-				month = 12;
-				year--;
-			}
-			day += MaxDay[month - 1];
+			throw MonthExceptionError(m);
 		}
+
+		if (d < 1 || d>MaxDay[m - 1])
+		{
+			throw DayExceptionError(d);
+		}
+
+		
 	}
-
-
-public:
-
-	Date(int d, int m, int y);
-
 	Date() = default;
 	int GetDays() const;
 	int GetMonths() const;
 	int GetYears() const;
-	Date(int d) :Date(d, 0, 0) {}
+	
+	Date(int d) :Date(d, 1, 1) 
+	{
+		int MaxDay[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+		if (day < 1 || day>MaxDay[month-1])
+		{
+			throw DayExceptionError(day);
+		}
+		
+	}
 
 	//leap year
 	bool isLeapYear()
@@ -93,7 +100,7 @@ public:
 	Date& operator+= (int d)
 	{
 		day += d;
-		Normalize();
+		Date(day, month, year);
 		return *this;
 	}
 
@@ -107,7 +114,7 @@ public:
 	void AddDays(int d)
 	{
 		day += d;
-		Normalize();
+		Date(day, month, year);
 	}
 
 	//operator overloading -
@@ -120,7 +127,7 @@ public:
 	void Subtract(int d)
 	{
 		day -= d;
-		Normalize();
+		Date(day, month, year);
 	}
 
 };
@@ -141,14 +148,7 @@ int Date::GetYears() const
 }
 
 
-Date::Date(int d, int m, int y)
-{
-	day = d;
-	month = m;
-	year = y;
-	Normalize();
 
-}
 
 //operator overloading <<
 std::ostream& operator<<(std::ostream& out, const Date& date)
@@ -160,6 +160,7 @@ std::ostream& operator<<(std::ostream& out, const Date& date)
 //operator overloading >>
 std::istream& operator>>(std::istream& in, Date& date)
 {
+	std::cin.exceptions(std::istream::failbit);
 	int d;
 	int m;
 	int y;
@@ -175,22 +176,38 @@ std::istream& operator>>(std::istream& in, Date& date)
 
 int main()
 {
-
-	Date d(40, 11, 2001);
-	std::cout << d.GetDays() << "." << d.GetMonths() << "." << d.GetYears() << std::endl;
-	d.AddDays(10);
-	std::cout << d << std::endl;
-
-	Date d1(19, 02, 2000);
-	std::cout << "DATE->" << d1 << std::endl;
-	d1.isLeapYear();
+	try
+	{
+		Date date(-1, 12, 2008);
 
 
-	Date x(30, 0, 0);
-
-	std::cout << x.GetDays() << "." << x.GetMonths() << "." << x.GetYears() << std::endl;
-	////x.isLeapYear(); 
-
+	}
+	catch (const DayExceptionError& ex)
+	{
+		std::cerr << "Error!\nIncorrect day: " << ex.day << std::endl;
+		return 1;
+	}
+	catch (const MonthExceptionError& ex)
+	{
+		std::cerr << "Error!\nIncorrect month: " << ex.month << std::endl;
+		return 2;
+	}
+	catch (const YearExceptionError& ex)
+	{
+		std::cerr << "Error!\nIncorrect year: " << ex.year << std::endl;
+		return 3;
+	}
+	catch (const std::istream::failure& ex)
+	{
+		std::cerr << "Failed to read date " << ex.what() << "\n";
+		return 4;
+	}
+	catch (...)
+	{
+		std::cerr << "Other failure " << "\n";
+		return 5;
+	}
+	
 
 	return 0;
 }
